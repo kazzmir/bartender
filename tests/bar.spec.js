@@ -17,15 +17,15 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
     await page.mouse.up();
   };
   // Sofia at the left of the bar ordered a Negroni, not an Old Fashioned.
-  await dragTo(440, 460);
+  await dragTo(480, 310);
   await expect(page.locator('#toast')).toContainText('Not SOFIA');
   await expect(page.locator('#served')).toHaveText('0');
   await expect(page.locator('#pour-count')).toHaveText('3 pours');
   await page.waitForTimeout(1800);
   // Serve James in the center by picking up the actual 3D glass.
-  await page.mouse.move(838, 540);
+  await page.mouse.move(868, 510);
   await page.mouse.down();
-  await page.mouse.move(720, 460, { steps: 4 });
+  await page.mouse.move(720, 310, { steps: 4 });
   await page.mouse.up();
   await expect(page.locator('#served')).toHaveText('1');
   await expect(page.locator('#pour-count')).toHaveText('0 pours');
