@@ -23,7 +23,7 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await expect(page.locator('#pour-count')).toHaveText('3 pours');
   await page.waitForTimeout(1800);
   // Serve James in the center by picking up the actual 3D glass.
-  await page.mouse.move(868, 510);
+  await page.mouse.move(720, 510);
   await page.mouse.down();
   await page.mouse.move(720, 310, { steps: 4 });
   await page.mouse.up();
