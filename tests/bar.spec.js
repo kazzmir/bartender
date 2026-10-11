@@ -6,6 +6,11 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await page.goto('/');
   await expect(page.locator('#world canvas')).toBeVisible();
   await expect(page.locator('#customer-queue button')).toHaveCount(2);
+  await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#sound').click();
+  await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#sound').click();
+  await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#glass-toggle').click();
   await expect(page.locator('#glass-name')).toHaveText('Coupe glass');
   await page.waitForTimeout(250);

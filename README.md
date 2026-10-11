@@ -41,4 +41,4 @@ npm test
 
 Tests cover concurrent arrivals, correct and incorrect drag targets, drink delivery, and WebGL failure/context-loss handling.
 
-Sound is optional and generated locally through Web Audio. All scene geometry and bottle textures are generated in code. Google Fonts is optional; system fonts are used when unavailable.
+Sound is generated locally through Web Audio: pouring, stirring/shaking, serving, arrivals, departures, glass clinks, tips, and patience warnings, plus a quiet ambient backdrop. Audio starts after the first click or keypress. The header sound button mutes all audio and remembers the setting; pausing the game silences audio until resumed. All scene geometry and bottle textures are generated in code. Google Fonts is optional; system fonts are used when unavailable.
