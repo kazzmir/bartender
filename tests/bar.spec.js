@@ -6,6 +6,11 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await page.goto('/');
   await expect(page.locator('#world canvas')).toBeVisible();
   await expect(page.locator('#customer-queue button')).toHaveCount(2);
+  await page.locator('#glass-toggle').click();
+  await expect(page.locator('#glass-name')).toHaveText('Coupe glass');
+  await page.waitForTimeout(250);
+  await page.locator('#glass-toggle').click();
+  await expect(page.locator('#glass-name')).toHaveText('Rocks glass');
   await expect(page.locator('#customer-queue button')).toHaveCount(3, { timeout: 22000 });
   for (const key of ['1', '4', '5', 'Space']) await page.keyboard.press(key);
   await expect(page.locator('#mix span')).toHaveText('Mixed ✓');
