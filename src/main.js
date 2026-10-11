@@ -12,7 +12,7 @@ let toastTimeout;
 function toast(message){$('#toast').textContent=message;$('#toast').style.opacity=1;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('#toast').style.opacity=0,3200)}
 $('#ingredients').innerHTML=ingredients.map((i,n)=>`<button class="ingredient" data-index="${n}" title="Add ${i.unit} ${i.name}"><kbd>${n+1}</kbd><span class="ingredient-count"></span><div class="bottle-icon" style="--bottle:${i.color}" data-label="${i.name.split(' ')[0].toUpperCase()}"></div><b>${i.name}</b><small>${i.detail}</small></button>`).join('');
 const queue=document.createElement('div');queue.id='customer-queue';queue.setAttribute('aria-label','Customers at the bar');$('.order-card').prepend(queue);
-let bar={pour(){},arrive(){},depart(){},select(){},mix(){}};
+let bar={pour(){},arrive(){},depart(){},select(){},setPatience(){},highlight(){},mix(){}};
 window.addEventListener('graphics-status',()=>{paused=true});
 if(checkWebGL())try{bar=createBar(addIngredient,{onSelect:selectCustomer,onServe:serve,onDelivered:finishDelivery,canInteract:()=>!paused});}catch(error){console.error(error);reportGraphicsFailure('WebGL is available, but the 3D scene could not start.',error.stack||error.message)}
 if(!graphicsWorking())paused=true;
@@ -26,7 +26,7 @@ function update(){
  current().items.forEach(i=>$(`#recipe li[data-id="${i}"]`)?.classList.toggle('done',contents.includes(i)));
  bar.pour(contents.length);
 }
-function renderQueue(){queue.innerHTML=customers.map((c,slot)=>c?`<button data-slot="${slot}" class="${slot===selected?'selected':''}" ${c.leaving?'disabled':''}><b>${c.recipe.customer}</b><span>${c.leaving?'THANK YOU':Math.ceil(c.time)+'s'}</span></button>`:`<span class="empty-seat">${['CENTER','LEFT','RIGHT'][slot]} · OPEN</span>`).join('')}
+function renderQueue(){customers.forEach((c,slot)=>{if(c)bar.setPatience(slot,c.time/105)});bar.highlight(customers[selected]&&!customers[selected].leaving?selected:-1);queue.innerHTML=customers.map((c,slot)=>c?`<button data-slot="${slot}" class="${slot===selected?'selected':''}" ${c.leaving?'disabled':''}><b>${c.recipe.customer}</b><span>${c.leaving?'THANK YOU':Math.ceil(c.time)+'s'}</span></button>`:`<span class="empty-seat">${['CENTER','LEFT','RIGHT'][slot]} · OPEN</span>`).join('')}
 function showOrder(){
  const c=customers[selected],r=current();renderQueue();
  if(!c){$('#drink-title').textContent='Waiting for company';$('#recipe').innerHTML='';$('#customer-bubble').style.opacity=0;return}
