@@ -38,7 +38,7 @@ function showOrder(){
 }
 function selectCustomer(slot){if(paused||busy||delivering||!customers[slot]||customers[slot].leaving)return;selected=slot;bar.select(slot);showOrder()}
 queue.onclick=e=>{const button=e.target.closest('button');if(button)selectCustomer(Number(button.dataset.slot))};
-function arrive(slot){const number=sequence++;customers[slot]={recipe:recipes[number%recipes.length],number:number+1,time:105,leaving:false};bar.arrive(slot);if(!customers[selected]||customers[selected].leaving)selected=slot;showOrder()}
+function arrive(slot){const number=sequence++;customers[slot]={recipe:recipes[number%recipes.length],number:number+1,time:105,leaving:false};bar.arrive(slot,customers[slot].recipe.customer,customers[slot].recipe.name);if(!customers[selected]||customers[selected].leaving)selected=slot;showOrder()}
 function addIngredient(index){if(paused||busy||delivering)return;if(contents.length>=6){toast('Your glass is full. Reset to start again.');return}contents.push(index);mixed=false;update()}
 function reset(){if(paused||busy||delivering)return;contents=[];mixed=false;update()}
 function doMix(){if(paused||busy||delivering)return;if(!contents.length){toast('Start with a pour. Your glass is empty.');return}busy=true;mixed=false;update();setTimeout(()=>{busy=false;mixed=true;bar.mix();update();toast('Ready. Drag the glass from your bar onto a customer.');},1600)}

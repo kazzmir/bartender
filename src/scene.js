@@ -46,6 +46,20 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, canInteract
  for(let s of [-1,1]){let arm=body(new THREE.CylinderGeometry(.1,.075,.48,12),shirt,s*.32,1.52,.05);arm.rotation.z=s*.27;let forearm=body(new THREE.CylinderGeometry(.072,.065,.43,12),skin,s*.34,1.29,.24);forearm.rotation.x=1.1;body(new THREE.SphereGeometry(.075,12,10),skin,s*.34,1.2,.43)}
  const customers=[customer,customer.clone(true),customer.clone(true)];
  customers.forEach((c,slot)=>{if(slot)scene.add(c);c.visible=false;c.userData.slot=slot;c.traverse(o=>{o.userData.slot=slot;if(o.isMesh){o.material=o.material.clone();o.material.emissiveIntensity=0;if(o.material.color.getHex()===shirt.color.getHex())o.material.color.set(['#828a77','#80675b','#657987'][slot])}})});
+ const customerLabels=customers.map((c,slot)=>{
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=144;
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const label=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false}));
+ label.userData.slot=slot;label.position.set(0,2.65,0);label.scale.set(1.65,.464,1);c.add(label);
+ return {canvas,texture};
+ });
+ function updateCustomerLabel(slot,name,drink){
+ const {canvas,texture}=customerLabels[slot],ctx=canvas.getContext('2d');ctx.clearRect(0,0,512,144);
+ ctx.fillStyle='rgba(24,32,25,0.92)';ctx.beginPath();ctx.roundRect(4,4,504,136,18);ctx.fill();
+ ctx.strokeStyle='rgba(216,182,119,0.5)';ctx.lineWidth=2;ctx.stroke();ctx.textAlign='center';
+ ctx.fillStyle='#d8b677';ctx.font='600 27px sans-serif';ctx.fillText(name,256,53);
+ ctx.fillStyle='#eee8d9';ctx.font='30px sans-serif';ctx.fillText(drink,256,104,470);texture.needsUpdate=true;
+ }
  const positions=[0,-2.5,2.5];
  const patience=[1,1,1];let focusedSlot=0;
  const patientGlow=new THREE.Color('#7bb989'),restlessGlow=new THREE.Color('#d9a64d'),angryGlow=new THREE.Color('#e46b55'),glowColor=new THREE.Color();
@@ -72,5 +86,5 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, canInteract
  else if(!dragGlass&&!flight)drinkGlass.position.copy(home());
  try{renderer.render(scene,camera)}catch(error){console.error('3D rendering failed:',error);reportGraphicsFailure('The browser failed while drawing the 3D scene.',error.stack || error.message)}}animate();
  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
- return {pour(count){liquid.visible=count>0;liquid.scale.y=Math.min(count*1.1,4);liquid.position.y=.02+.025*Math.min(count*1.1,4)},arrive(slot){const c=customers[slot];c.visible=true;c.position.set(positions[slot],0,-3.8)},depart(slot){customers[slot].visible=false},select(slot){focus=new THREE.Vector3(positions[slot],1.85,-.55)},setPatience(slot,value){patience[slot]=THREE.MathUtils.clamp(value,0,1)},highlight(slot){focusedSlot=slot},mix(){tint++;liquid.material.color.set(tint%2?'#d4973a':'#ba7a25')},isDragging(){return moved&&dragGlass},projectGlass(){const p=drinkGlass.position.clone();p.y+=.15;p.project(camera);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2}}};
+ return {pour(count){liquid.visible=count>0;liquid.scale.y=Math.min(count*1.1,4);liquid.position.y=.02+.025*Math.min(count*1.1,4)},arrive(slot,name,drink){const c=customers[slot];updateCustomerLabel(slot,name,drink);c.visible=true;c.position.set(positions[slot],0,-3.8)},depart(slot){customers[slot].visible=false},select(slot){focus=new THREE.Vector3(positions[slot],1.85,-.55)},setPatience(slot,value){patience[slot]=THREE.MathUtils.clamp(value,0,1)},highlight(slot){focusedSlot=slot},mix(){tint++;liquid.material.color.set(tint%2?'#d4973a':'#ba7a25')},isDragging(){return moved&&dragGlass},projectGlass(){const p=drinkGlass.position.clone();p.y+=.15;p.project(camera);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2}}};
 }
