@@ -25,4 +25,10 @@ Follow the customer's recipe, add the correct ingredients, select the right glas
 - **Escape**: pause / resume
 - Drag the scene: look around
 
+## Graphics troubleshooting
+
+The game requires WebGL 2. It checks support at startup and displays a diagnostic panel if context creation or rendering fails. A lost graphics context pauses the shift and offers a reload.
+
+If Chrome does not render but Brave does, enable **Settings → System → Use graphics acceleration when available**, then relaunch Chrome. Check **chrome://gpu** for WebGL/WebGL2 status; browser GPU blocklists, disabled acceleration, or graphics drivers can affect browsers differently. The in-game panel includes browser-provided technical details.
+
 Sound is optional and generated locally through Web Audio. All scene geometry and bottle textures are generated in code. Google Fonts is optional; system fonts are used when unavailable.
