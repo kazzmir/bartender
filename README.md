@@ -11,6 +11,27 @@ npm run dev
 
 Open the URL printed by Vite. `npm run build` creates a production build in `dist/`.
 
+## GitHub Pages
+
+The workflow in `.github/workflows/pages.yml` builds the game with Node.js 22 and deploys `dist/` to GitHub Pages on pushes to `master` or `main`. It can also be run manually from the Actions tab.
+
+One-time setup:
+
+1. Open the GitHub repository’s **Settings → Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Push the workflow to GitHub, or run **Actions → Deploy game to GitHub Pages → Run workflow**.
+
+For `kazzmir/bartender`, the default site URL is **https://kazzmir.github.io/bartender/**. The workflow uses GitHub’s configured base path, so assets also work with a custom domain or a user/organization Pages site. No additional deployment secrets are required.
+
+To check a repository-style build locally:
+
+```sh
+VITE_BASE_PATH=/bartender/ npm run build
+VITE_BASE_PATH=/bartender/ npm run preview
+```
+
+Open `/bartender/` on the preview server. Normal local development continues to use `/`.
+
 ## Play
 
 Up to three customers can wait at the bar, each with a separate order and patience timer. Two arrive together at the start; more arrive during your shift. Click a customer or their name in the order panel to inspect their recipe. Start by dragging a rocks glass (front row) or coupe (back row) from the glassware on the right of the prep counter onto the center mixing mat. Then add the correct ingredients and mix. You cannot pour without a glass, and each served drink needs a fresh glass. Then drag the 3D glass from the counter onto the intended customer and release: it slides over to them if the drink is correct, or returns to your workstation if not. You can also start the drag from the workstation’s glass icon. Earn tips and serve eight drinks to reach your shift goal. Play continues after reaching the goal.
