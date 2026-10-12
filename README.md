@@ -4,6 +4,8 @@ A first-person browser bartending game set in the Amber Room. Built with Three.j
 
 ## Run
 
+Use **Node.js 24**. With nvm, run `nvm install` and `nvm use` to pick up the version in `.nvmrc`.
+
 ```sh
 npm install
 npm run dev
@@ -13,7 +15,7 @@ Open the URL printed by Vite. `npm run build` creates a production build in `dis
 
 ## GitHub Pages
 
-The workflow in `.github/workflows/pages.yml` builds the game with Node.js 22 and deploys `dist/` to GitHub Pages on pushes to `master` or `main`. It can also be run manually from the Actions tab.
+The workflow in `.github/workflows/pages.yml` builds the game with Node.js 24 and deploys `dist/` to GitHub Pages on pushes to `master` or `main`. It can also be run manually from the Actions tab.
 
 One-time setup:
 
