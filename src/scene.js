@@ -28,7 +28,7 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlac
  for(let x=-8;x<8;x+=1)box(.86,.75,.025,x+.45,.64,-.17,mat('#28382a'));
  // Foreground workstation, bottles, tools and glasses.
  box(15,.16,1.25,0,1.04,4.7,wood);const mixingMat=box(1.5,.025,.68,0,1.135,4.6,mat('#1b2924'));for(let i=0;i<6;i++)bottle(-3.6+i*.42,1.14,4.45,i,1.1);
- const silver=mat('#b3b6a7',.23,.85);cyl(.16,.23,.47,1.65,1.37,4.47,silver);cyl(.14,.16,.14,1.65,1.66,4.47,silver);cyl(.065,.09,.07,1.65,1.765,4.47,silver);cyl(.08,.045,.13,2.15,1.22,4.5,brass);cyl(.045,.075,.13,2.15,1.35,4.5,brass);
+ const silver=mat('#b3b6a7',.23,.85);cyl(.16,.23,.47,2.05,1.37,4.47,silver);cyl(.14,.16,.14,2.05,1.66,4.47,silver);cyl(.065,.09,.07,2.05,1.765,4.47,silver);cyl(.08,.045,.13,2.65,1.22,4.5,brass);cyl(.045,.075,.13,2.65,1.35,4.5,brass);
  function buildGlass(group,type,material){
  group.children.slice().forEach(o=>{if(o.userData.liquid||o.userData.tool)return;group.remove(o);o.geometry.dispose()});
  function part(geometry,y){const mesh=new THREE.Mesh(geometry,material);mesh.position.y=y;group.add(mesh);return mesh}
