@@ -1,0 +1,110 @@
+/* Readable interface sizing without changing the 3D camera or scene. */
+body { font-size: 14px; }
+.brand small { font-size: 10px; }
+.shift { font-size: 12px; }
+.eyebrow { font-size: 11px; letter-spacing: 1.2px; }
+.shift-card > p { font-size: 14px; }
+.stats small { font-size: 11px; letter-spacing: .5px; }
+.shift-goal, .shift-goal b { font-size: 12px; }
+.scene-label, .scene-label > span:last-child { font-size: 10px; }
+#customer-bubble > span { font-size: 11px; }
+#customer-bubble p { font-size: 14px; }
+
+.order-card {
+  width: 320px;
+  top: 15px;
+  max-height: max(240px, calc(100dvh - 420px));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #8b947b #20291f;
+}
+#customer-queue { padding: 10px; gap: 7px; }
+#customer-queue button { padding: 8px 5px; }
+#customer-queue b, #customer-queue button span { font-size: 12px; }
+#customer-queue .empty-seat { font-size: 11px; line-height: 1.4; }
+.order-heading { padding: 12px 18px; font-size: 12px; letter-spacing: 1px; }
+.order-heading svg { width: 17px; height: 17px; }
+.order-title { padding: 14px 18px 0; }
+.order-title .eyebrow { font-size: 11px; }
+.order-title h2 { font-size: 28px; line-height: 1.2; }
+.order-title p { font-size: 14px; line-height: 1.4; }
+.patience { padding: 16px 18px; }
+.patience > div:first-child { font-size: 13px; }
+.patience svg { width: 15px; height: 15px; }
+.recipe-heading { margin: 0 18px; font-size: 12px; letter-spacing: .7px; }
+.recipe-heading span { font-size: 11px; color: #a2ad96; }
+#recipe { margin: 8px 18px 12px; }
+#recipe li { font-size: 15px; line-height: 1.4; padding: 9px 0; gap: 9px; }
+#recipe li .check { width: 17px; height: 17px; flex-shrink: 0; font-size: 12px; }
+#recipe li > span:last-child { font-size: 14px; color: #b2bda5; white-space: nowrap; }
+.method { margin: 0 18px 12px; padding: 10px; }
+.method b { font-size: 14px; }
+.method span { font-size: 13px; color: #b0bba2; }
+.order-footer { font-size: 12px; padding: 10px 18px; color: #a8b39a; }
+.order-footer svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+.station-top { font-size: 12px; letter-spacing: .8px; padding: 12px 18px; gap: 12px; }
+.station-top small { font-size: 13px; margin-left: 12px; color: #a3b094; }
+.keyboard-hint { font-size: 11px; flex-wrap: wrap; justify-content: flex-end; }
+kbd { font-size: 11px; }
+.station-content { padding: 16px 18px; gap: 20px; }
+.ingredient-area .eyebrow, .mix-heading .eyebrow { font-size: 12px; letter-spacing: .8px; }
+.ingredient-area .eyebrow span { font-size: 11px; color: #a0ae92; }
+#ingredients { overflow-x: auto; padding: 4px 0; scrollbar-width: thin; }
+.ingredient {
+  min-width: 110px;
+  height: auto;
+  min-height: 128px;
+  padding: 9px 7px;
+  flex-shrink: 0;
+}
+.ingredient kbd, .ingredient .ingredient-count { font-size: 12px; }
+.bottle-icon { margin-top: 14px; margin-bottom: 8px; }
+.ingredient b { font-size: 15px; line-height: 1.25; }
+.ingredient small { font-size: 12px; line-height: 1.4; color: #a8b498; }
+.mix-area { width: 355px; flex-shrink: 0; padding-left: 20px; }
+.mix-heading { gap: 8px; }
+.mix-heading button { font-size: 12px; color: #b6c1a9; white-space: nowrap; }
+.mix-heading svg { width: 14px; height: 14px; }
+.glass-row { gap: 10px; }
+.glass-row button { font-size: 14px; line-height: 1.4; text-align: left; }
+.glass-row svg, .glass-row svg:last-child { width: 20px; height: 20px; flex-shrink: 0; color: var(--gold); }
+.glass-row > span { font-size: 12px; white-space: nowrap; }
+#mix-contents { font-size: 13px; line-height: 1.5; color: #aab89b; height: 39px; white-space: normal; }
+.mix-actions { margin-top: 10px; }
+.mix-actions button { font-size: 14px; padding: 11px 13px; }
+.mix-actions svg { width: 17px; height: 17px; flex-shrink: 0; }
+footer, footer button { font-size: 12px; }
+footer > span:nth-child(2) { font-size: 10px; }
+#toast { font-size: 15px; bottom: 325px; max-width: 85vw; white-space: normal; text-align: center; }
+.modal p, .book-recipe p { font-size: 15px; }
+.modal .primary { font-size: 14px; }
+
+@media (max-width: 1100px) {
+  .keyboard-hint { display: none; }
+  .mix-area { width: 315px; }
+  footer > span:nth-child(2) { display: none; }
+  .order-card { right: 22px; width: 300px; }
+}
+@media (max-width: 700px) {
+  .order-card { right: 12px; top: 110px; width: 245px; max-height: 260px; }
+  .order-title h2 { font-size: 25px; }
+  .order-heading { padding: 10px 12px; }
+  .order-title { padding: 10px 12px; }
+  #recipe { margin: 8px 12px 12px; }
+  #recipe li { font-size: 14px; }
+  #recipe li > span:last-child { font-size: 13px; }
+  .patience { padding: 0 12px 12px; }
+  .station-content { padding: 12px; }
+  .ingredient { min-width: 108px; min-height: 126px; }
+  .ingredient b { font-size: 14px; }
+  .mix-area { width: 100%; padding: 12px 0 0; grid-template-columns: minmax(0, 1fr) minmax(140px, 1fr); gap: 0 10px; }
+  .mix-heading { flex-wrap: wrap; }
+  .glass-row button { font-size: 13px; }
+  .mix-actions { flex-wrap: wrap; justify-content: stretch; }
+  .mix-actions button { font-size: 13px; }
+  .mix-actions #mix { flex: 1; }
+  #mix-contents { height: auto; min-height: 39px; }
+  #toast { bottom: 380px; font-size: 14px; }
+  footer > span:first-child { font-size: 0; }
+}

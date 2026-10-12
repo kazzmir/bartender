@@ -5,6 +5,10 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('#world canvas')).toBeVisible();
+  await expect(page.locator('#recipe li').first()).toHaveCSS('font-size', '15px');
+  await expect(page.locator('.ingredient b').first()).toHaveCSS('font-size', '15px');
+  await expect(page.locator('.ingredient small').first()).toHaveCSS('font-size', '12px');
+  await expect(page.locator('#mix')).toHaveCSS('font-size', '14px');
   await expect(page.locator('#customer-queue button')).toHaveCount(2);
   await expect(page.locator('#glass-hint')).toHaveCount(0);
   await expect(page.locator('#world canvas')).toHaveAttribute('data-glass-hint', 'Rocks');

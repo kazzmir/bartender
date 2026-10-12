@@ -1,4 +1,5 @@
 import './style.css';
+import './readability.css';
 import {sound} from './audio';
 import {createIcons,VolumeX,Volume2,CircleHelp,Pause,Wine,Coins,ReceiptText,Clock3,RefreshCw,Snowflake,Lightbulb,RotateCcw,GlassWater,ChevronsUpDown,ArrowUpRight,Mouse,BookOpen,X,ArrowRight} from 'lucide';
 import {createBar} from './scene';
