@@ -29,7 +29,7 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlac
  box(15,.16,1.25,0,1.04,4.7,wood);const mixingMat=box(1.5,.025,.68,0,1.135,4.6,mat('#1b2924'));for(let i=0;i<6;i++)bottle(-3.6+i*.42,1.14,4.45,i,1.1);
  const silver=mat('#b3b6a7',.23,.85);cyl(.16,.23,.47,1.65,1.37,4.47,silver);cyl(.14,.16,.14,1.65,1.66,4.47,silver);cyl(.065,.09,.07,1.65,1.765,4.47,silver);cyl(.08,.045,.13,2.15,1.22,4.5,brass);cyl(.045,.075,.13,2.15,1.35,4.5,brass);
  function buildGlass(group,type,material){
- group.children.slice().forEach(o=>{if(o.userData.liquid)return;group.remove(o);o.geometry.dispose()});
+ group.children.slice().forEach(o=>{if(o.userData.liquid||o.userData.tool)return;group.remove(o);o.geometry.dispose()});
  function part(geometry,y){const mesh=new THREE.Mesh(geometry,material);mesh.position.y=y;group.add(mesh);return mesh}
  if(type==='Coupe'){
  part(new THREE.CylinderGeometry(.14,.15,.025,32),.0125);part(new THREE.CylinderGeometry(.018,.023,.325,20),.1875);
@@ -42,7 +42,20 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlac
  const drinkGlass=glass(0,1.15,4.6),drinkMaterial=drinkGlass.children[0].material;drinkGlass.visible=false;
  const liquid=new THREE.Mesh(new THREE.CylinderGeometry(.16,.135,.05,24),new THREE.MeshStandardMaterial({color:'#be7d26',transparent:true,opacity:.8,roughness:.2}));liquid.userData.liquid=true;drinkGlass.add(liquid);liquid.visible=false;
  const coaster=cyl(.25,.25,.012,0,1.15,4.6,mat('#d4c5a4'));
- let glassType=null,pours=0;
+ let glassType=null,pours=0,stirElapsed=-1;
+ const stirrer=new THREE.Group();stirrer.userData.tool=true;stirrer.visible=false;drinkGlass.add(stirrer);
+ const spoonMaterial=mat('#d9d6bf',.2,.85);
+ const spoonStem=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.5,12),spoonMaterial);spoonStem.position.y=.26;stirrer.add(spoonStem);
+ const spoonBowl=new THREE.Mesh(new THREE.SphereGeometry(.04,16,12),spoonMaterial);spoonBowl.scale.set(.6,.22,1);spoonBowl.position.y=.012;stirrer.add(spoonBowl);
+ const spoonHandle=new THREE.Mesh(new THREE.SphereGeometry(.023,12,8),spoonMaterial);spoonHandle.scale.set(.6,1.5,.6);spoonHandle.position.y=.52;stirrer.add(spoonHandle);
+ function animateStir(dt){
+ if(stirElapsed<0)return;
+ if(canInteract?.())stirElapsed+=dt;
+ if(stirElapsed>=1.6){stirElapsed=-1;stirrer.visible=false;return}
+ const angle=stirElapsed*Math.PI*5,radius=glassType==='Coupe'?.085:.07;
+ stirrer.position.set(Math.cos(angle)*radius,glassType==='Coupe'?.385:.065,Math.sin(angle)*radius);
+ stirrer.rotation.set(Math.sin(angle)*.16,0,-Math.cos(angle)*.16);
+ }
  function updateLiquid(){liquid.visible=glassType!==null&&pours>0;const scale=glassType==='Coupe'?Math.min(pours*.6,1.6):Math.min(pours*1.1,4);liquid.scale.y=scale;liquid.position.y=glassType==='Coupe'?.39+.0325*scale:.02+.025*scale}
  function setGlass(type){if(type===glassType)return;glassType=type;drinkGlass.visible=!!type;if(type){buildGlass(drinkGlass,type,drinkMaterial);liquid.geometry.dispose();liquid.geometry=type==='Coupe'?new THREE.CylinderGeometry(.205,.13,.065,32):new THREE.CylinderGeometry(.16,.135,.05,24)}updateLiquid()}
  const glassRack=[];
@@ -115,9 +128,10 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlac
  });
  if(flight&&canInteract?.()){flight.elapsed+=dt;const p=Math.min(flight.elapsed/.75,1),ease=p*p*(3-2*p);drinkGlass.position.lerpVectors(flight.start,flight.end,ease);drinkGlass.position.y+=Math.sin(p*Math.PI)*.12;if(p===1){const accepted=flight.accepted;flight=null;if(accepted)onDelivered?.();drinkGlass.position.copy(home())}}
  else if(!dragGlass&&!flight)drinkGlass.position.copy(home());
+ animateStir(dt);
  mixingMat.material.emissive.set(stockDrag?'#526c3b':'#000000');mixingMat.material.emissiveIntensity=.25;
  updateGlassHint(t);
  try{renderer.render(scene,camera)}catch(error){console.error('3D rendering failed:',error);reportGraphicsFailure('The browser failed while drawing the 3D scene.',error.stack || error.message)}}animate();
  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
- return {setGlass,pour(count){pours=count;updateLiquid()},arrive(slot,name,drink){const c=customers[slot];updateCustomerLabel(slot,name,drink);c.visible=true;c.position.set(positions[slot],0,-3.8)},depart(slot){customers[slot].visible=false},select(slot){focus=new THREE.Vector3(positions[slot],1.85,-.55)},setPatience(slot,value){patience[slot]=THREE.MathUtils.clamp(value,0,1)},highlight(slot){focusedSlot=slot},mix(){tint++;liquid.material.color.set(tint%2?'#d4973a':'#ba7a25')},isDragging(){return moved&&dragGlass},projectGlass(){const p=drinkGlass.position.clone();p.y+=glassType==='Coupe'?.43:.15;p.project(camera);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2}}};
+ return {setGlass,pour(count){pours=count;updateLiquid()},arrive(slot,name,drink){const c=customers[slot];updateCustomerLabel(slot,name,drink);c.visible=true;c.position.set(positions[slot],0,-3.8)},depart(slot){customers[slot].visible=false},select(slot){focus=new THREE.Vector3(positions[slot],1.85,-.55)},setPatience(slot,value){patience[slot]=THREE.MathUtils.clamp(value,0,1)},highlight(slot){focusedSlot=slot},startMix(method){stirElapsed=method==='Stir'?0:-1;stirrer.visible=stirElapsed===0},mix(){stirElapsed=-1;stirrer.visible=false;tint++;liquid.material.color.set(tint%2?'#d4973a':'#ba7a25')},isDragging(){return moved&&dragGlass},projectGlass(){const p=drinkGlass.position.clone();p.y+=glassType==='Coupe'?.43:.15;p.project(camera);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2}}};
 }

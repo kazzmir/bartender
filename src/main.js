@@ -14,7 +14,7 @@ let toastTimeout;
 function toast(message){$('#toast').textContent=message;$('#toast').style.opacity=1;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('#toast').style.opacity=0,3200)}
 $('#ingredients').innerHTML=ingredients.map((i,n)=>`<button class="ingredient" data-index="${n}" title="Add ${i.unit} ${i.name}"><kbd>${n+1}</kbd><span class="ingredient-count"></span><div class="bottle-icon" style="--bottle:${i.color}" data-label="${i.name.split(' ')[0].toUpperCase()}"></div><b>${i.name}</b><small>${i.detail}</small></button>`).join('');
 const queue=document.createElement('div');queue.id='customer-queue';queue.setAttribute('aria-label','Customers at the bar');$('.order-card').prepend(queue);
-let bar={setGlass(){},pour(){},arrive(){},depart(){},select(){},setPatience(){},highlight(){},mix(){}};
+let bar={setGlass(){},pour(){},arrive(){},depart(){},select(){},setPatience(){},highlight(){},startMix(){},mix(){}};
 window.addEventListener('graphics-status',()=>{paused=true;sound.setPaused(true)});
 if(checkWebGL())try{bar=createBar(addIngredient,{onSelect:selectCustomer,onServe:serve,onDelivered:finishDelivery,onGlassPlaced:placeGlass,canReplaceGlass:canReplaceGlass,getGlassHint:()=>served===0&&!glass&&!paused?current().glass:null,canInteract:()=>!paused});}catch(error){console.error(error);reportGraphicsFailure('WebGL is available, but the 3D scene could not start.',error.stack||error.message)}
 if(!graphicsWorking())paused=true;
@@ -45,7 +45,7 @@ queue.onclick=e=>{const button=e.target.closest('button');if(button)selectCustom
 function arrive(slot){const number=sequence++;customers[slot]={recipe:recipes[number%recipes.length],number:number+1,time:105,leaving:false};bar.arrive(slot,customers[slot].recipe.customer,customers[slot].recipe.name);sound.play('arrival');if(!customers[selected]||customers[selected].leaving)selected=slot;showOrder()}
 function addIngredient(index){if(paused||busy||delivering)return;if(!glass){toast('First, drag a glass from the counter onto the mixing mat.');return}if(contents.length>=6){toast('Your glass is full. Reset to start again.');return}contents.push(index);mixed=false;sound.play('pour');update()}
 function reset(){if(paused||busy||delivering)return;contents=[];glass=null;mixed=false;sound.play('reset');update()}
-function doMix(){if(paused||busy||delivering)return;if(!contents.length){toast('Start with a pour. Your glass is empty.');return}busy=true;mixed=false;sound.play('mix',method);update();setTimeout(()=>{busy=false;mixed=true;bar.mix();update();toast('Ready. Drag the glass from your bar onto a customer.');},1600)}
+function doMix(){if(paused||busy||delivering)return;if(!contents.length){toast('Start with a pour. Your glass is empty.');return}busy=true;mixed=false;bar.startMix(method);sound.play('mix',method);update();setTimeout(()=>{busy=false;mixed=true;bar.mix();update();toast('Ready. Drag the glass from your bar onto a customer.');},1600)}
 function removeCustomer(slot){sound.play('departure');customers[slot]=null;bar.depart(slot);if(selected===slot){selected=customers.findIndex(c=>c&&!c.leaving);if(selected<0)selected=0}showOrder()}
 function serve(slot){
  if(paused||busy||delivering)return false;
