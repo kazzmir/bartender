@@ -30,7 +30,7 @@ function update(){
  const recipe=current(),tutorial=served===0&&!paused,ready=matchesRecipe(contents,recipe);
  document.querySelectorAll('.ingredient').forEach((el,i)=>{const n=contents.filter(x=>x.id===i).length;el.title=`Add ${measurement(recipe,i)} ${ingredients[i].name}`;el.classList.toggle('active',n>0);const needed=tutorial&&recipe.items.includes(i)&&!contents.some(p=>p.id===i&&p.amount===measurement(recipe,i));el.classList.toggle('tutorial-needed',needed);el.querySelector('.ingredient-count').textContent=n?`+${n}`:''});
  $('#mix').classList.toggle('tutorial-needed',tutorial&&ready&&!mixed&&!busy&&method===recipe.method);
- $('#tool-toggle').classList.toggle('tutorial-needed',tutorial&&ready&&!mixed&&!busy&&method!==recipe.method);
+ $('#tool-toggle').classList.toggle('tutorial-needed',tutorial&&ready&&!mixed&&!busy);
  const intro=$('.station-top small');
  intro.textContent=!tutorial?'Pick. Pour. Perfect.':!glass?'Start with the highlighted cup.':!ready?'Add the highlighted ingredients.':mixed?'Drag your drink onto the customer.':method!==recipe.method?`Switch to ${recipe.method.toLowerCase()}, then mix.`:busy?'Mixing your first drink…':`${recipe.method} your drink — click the highlighted button.`;
  intro.classList.toggle('tutorial-instruction',tutorial);

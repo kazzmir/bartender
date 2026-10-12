@@ -55,6 +55,7 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await page.keyboard.press('5');
   await expect(page.locator('.ingredient.tutorial-needed')).toHaveCount(0);
   await expect(page.locator('#mix')).toHaveClass(/tutorial-needed/);
+  await expect(page.locator('#tool-toggle')).toHaveClass(/tutorial-needed/);
   await page.keyboard.press('m');
   await expect(page.locator('#tool-toggle')).toHaveClass(/tutorial-needed/);
   await expect(page.locator('#mix')).not.toHaveClass(/tutorial-needed/);

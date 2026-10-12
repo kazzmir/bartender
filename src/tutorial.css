@@ -1,31 +1,36 @@
 /* First-drink guidance stops after the first successful serve. */
 .ingredient.tutorial-needed {
-  border-color: #edcc8f;
-  background: linear-gradient(145deg, #74643a55, #303725);
+  border-color: #ffdb85;
+  outline: 2px solid #ffdb85;
+  outline-offset: -3px;
+  background: linear-gradient(145deg, #b8903966, #49412b);
   animation: tutorial-glow 1.5s ease-in-out infinite;
 }
 .ingredient.tutorial-needed b { color: #ffe2ab; }
 #mix.tutorial-needed {
-  border-color: #edcc8f;
-  color: #ffe2ab;
-  background: #514b30;
+  border-color: #ffdb85;
+  outline: 2px solid #ffdb85;
+  outline-offset: -3px;
+  color: #fff0c7;
+  background: #786132;
   animation: tutorial-glow 1.5s ease-in-out infinite;
 }
 #tool-toggle.tutorial-needed {
-  color: #ffe2ab;
-  outline: 2px solid #d8b677;
+  color: #fff0c7;
+  background: #786132;
+  outline: 2px solid #ffdb85;
   outline-offset: 4px;
   border-radius: 3px;
   animation: tutorial-glow 1.5s ease-in-out infinite;
 }
 .station-top small.tutorial-instruction { color: #edcc8f; }
 @keyframes tutorial-glow {
-  0%, 100% { box-shadow: inset 0 0 10px #d8b67712, 0 0 3px #d8b67722; }
-  50% { box-shadow: inset 0 0 16px #d8b67735, 0 0 8px #d8b67755; }
+  0%, 100% { box-shadow: inset 0 0 16px #ffd47755, 0 0 7px #ffd47788; }
+  50% { box-shadow: inset 0 0 30px #ffd477aa, 0 0 18px #ffd477cc; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ingredient.tutorial-needed, #mix.tutorial-needed, #tool-toggle.tutorial-needed {
     animation: none;
-    box-shadow: inset 0 0 12px #d8b67725;
+    box-shadow: inset 0 0 20px #ffd47777, 0 0 8px #ffd47788;
   }
 }
