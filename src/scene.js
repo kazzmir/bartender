@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {watchRenderer, reportGraphicsFailure, graphicsWorking} from './graphics';
 
-export function createBar(onBottle, {onSelect, onServe, onDelivered, canInteract} = {}) {
+export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlaced, canReplaceGlass, canInteract} = {}) {
  const scene = new THREE.Scene(); scene.background = new THREE.Color('#181b14'); scene.fog=new THREE.FogExp2('#171c15',.035);
  const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,70);camera.position.set(0,2.75,8.2);
  const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;document.querySelector('#world').append(renderer.domElement);watchRenderer(renderer);
@@ -26,37 +26,28 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, canInteract
  box(17,1.1,1.2,0,.55,.45,darkWood);box(17,.17,1.65,0,1.18,.5,wood);box(17,.035,.05,0,1.28,1.32,brass);box(17,.055,.08,0,.2,-.23,brass);
  for(let x=-8;x<8;x+=1)box(.86,.75,.025,x+.45,.64,-.17,mat('#28382a'));
  // Foreground workstation, bottles, tools and glasses.
- box(15,.16,1.25,0,1.04,4.7,wood);box(3.1,.025,.68,0,1.135,4.6,mat('#1b2924'));for(let i=0;i<6;i++)bottle(-3.6+i*.42,1.14,4.45,i,1.1);
+ box(15,.16,1.25,0,1.04,4.7,wood);const mixingMat=box(1.5,.025,.68,0,1.135,4.6,mat('#1b2924'));for(let i=0;i<6;i++)bottle(-3.6+i*.42,1.14,4.45,i,1.1);
  const silver=mat('#b3b6a7',.23,.85);cyl(.16,.23,.47,1.65,1.37,4.47,silver);cyl(.14,.16,.14,1.65,1.66,4.47,silver);cyl(.065,.09,.07,1.65,1.765,4.47,silver);cyl(.08,.045,.13,2.15,1.22,4.5,brass);cyl(.045,.075,.13,2.15,1.35,4.5,brass);
- function glass(x,y,z){const group=new THREE.Group();group.position.set(x,y,z);const m=new THREE.MeshPhysicalMaterial({color:'#d1d7c8',transparent:true,opacity:.35,roughness:.05,metalness:.12,side:THREE.DoubleSide});let o=new THREE.Mesh(new THREE.CylinderGeometry(.18,.15,.3,24),m);o.position.y=.15;group.add(o);let rim=new THREE.Mesh(new THREE.TorusGeometry(.18,.012,8,32),silver);rim.rotation.x=Math.PI/2;rim.position.y=.3;group.add(rim);scene.add(group);return group}
- const drinkGlass=glass(0,1.135,4.6);const liquid=new THREE.Mesh(new THREE.CylinderGeometry(.16,.135,.05,24),new THREE.MeshStandardMaterial({color:'#be7d26',transparent:true,opacity:.8,roughness:.2}));liquid.position.y=.04;drinkGlass.add(liquid);liquid.visible=false;
- const coaster=cyl(.25,.25,.012,0,1.128,4.6,mat('#d4c5a4'));
- let glassType='Rocks',pours=0;
- const drinkMaterial=drinkGlass.children[0].material;
- function updateLiquid(){
- liquid.visible=pours>0;
- const scale=glassType==='Coupe'?Math.min(pours*.6,1.6):Math.min(pours*1.1,4);
- liquid.scale.y=scale;
- liquid.position.y=glassType==='Coupe'?.39+.0325*scale:.02+.025*scale;
- }
- function setGlass(type){
- if(type===glassType)return;glassType=type;
- drinkGlass.children.slice().forEach(o=>{if(o===liquid)return;drinkGlass.remove(o);o.geometry.dispose()});
- function part(geometry,material,y){const mesh=new THREE.Mesh(geometry,material);mesh.position.y=y;drinkGlass.add(mesh);return mesh}
+ function buildGlass(group,type,material){
+ group.children.slice().forEach(o=>{if(o.userData.liquid)return;group.remove(o);o.geometry.dispose()});
+ function part(geometry,y){const mesh=new THREE.Mesh(geometry,material);mesh.position.y=y;group.add(mesh);return mesh}
  if(type==='Coupe'){
- part(new THREE.CylinderGeometry(.14,.15,.025,32),drinkMaterial,.0125);
- part(new THREE.CylinderGeometry(.018,.023,.325,20),drinkMaterial,.1875);
+ part(new THREE.CylinderGeometry(.14,.15,.025,32),.0125);part(new THREE.CylinderGeometry(.018,.023,.325,20),.1875);
  const profile=[new THREE.Vector2(0,.345),new THREE.Vector2(.06,.352),new THREE.Vector2(.13,.37),new THREE.Vector2(.19,.405),new THREE.Vector2(.23,.46),new THREE.Vector2(.245,.52)];
- part(new THREE.LatheGeometry(profile,40),drinkMaterial,0);
- const rim=part(new THREE.TorusGeometry(.245,.009,8,40),silver,.52);rim.rotation.x=Math.PI/2;
- }else{
- part(new THREE.CylinderGeometry(.18,.15,.3,24),drinkMaterial,.15);
- const rim=part(new THREE.TorusGeometry(.18,.012,8,32),silver,.3);rim.rotation.x=Math.PI/2;
+ part(new THREE.LatheGeometry(profile,40),0);
+ }else part(new THREE.CylinderGeometry(.18,.15,.3,24),.15);
+ const rim=new THREE.Mesh(new THREE.TorusGeometry(type==='Coupe'?.245:.18,.01,8,40),silver);rim.rotation.x=Math.PI/2;rim.position.y=type==='Coupe'?.52:.3;group.add(rim);
  }
- liquid.geometry.dispose();liquid.geometry=type==='Coupe'?new THREE.CylinderGeometry(.205,.13,.065,32):new THREE.CylinderGeometry(.16,.135,.05,24);
- updateLiquid();
- }
- for(let i=0;i<4;i++)glass(3+i*.38,1.14,4.5);box(.7,.08,.4,-1.35,1.16,4.4,mat('#544934'));for(let i=0;i<3;i++){const lime=cyl(.075,.075,.045,-1.5+i*.14,1.24,4.4,mat('#809950'));lime.rotation.x=Math.PI/2}
+ function glass(x,y,z,type='Rocks'){const group=new THREE.Group();group.position.set(x,y,z);const material=new THREE.MeshPhysicalMaterial({color:'#d1d7c8',transparent:true,opacity:.4,roughness:.05,metalness:.12,side:THREE.DoubleSide});buildGlass(group,type,material);scene.add(group);return group}
+ const drinkGlass=glass(0,1.15,4.6),drinkMaterial=drinkGlass.children[0].material;drinkGlass.visible=false;
+ const liquid=new THREE.Mesh(new THREE.CylinderGeometry(.16,.135,.05,24),new THREE.MeshStandardMaterial({color:'#be7d26',transparent:true,opacity:.8,roughness:.2}));liquid.userData.liquid=true;drinkGlass.add(liquid);liquid.visible=false;
+ const coaster=cyl(.25,.25,.012,0,1.15,4.6,mat('#d4c5a4'));
+ let glassType=null,pours=0;
+ function updateLiquid(){liquid.visible=glassType!==null&&pours>0;const scale=glassType==='Coupe'?Math.min(pours*.6,1.6):Math.min(pours*1.1,4);liquid.scale.y=scale;liquid.position.y=glassType==='Coupe'?.39+.0325*scale:.02+.025*scale}
+ function setGlass(type){if(type===glassType)return;glassType=type;drinkGlass.visible=!!type;if(type){buildGlass(drinkGlass,type,drinkMaterial);liquid.geometry.dispose();liquid.geometry=type==='Coupe'?new THREE.CylinderGeometry(.205,.13,.065,32):new THREE.CylinderGeometry(.16,.135,.05,24)}updateLiquid()}
+ const glassRack=[];
+ for(const type of ['Rocks','Coupe'])for(const x of [.95,1.45]){const stock=glass(x,1.135,type==='Rocks'?5.02:4.4,type);stock.userData.glassType=type;stock.userData.home=stock.position.clone();glassRack.push(stock)}
+ box(.7,.08,.4,-1.35,1.16,4.4,mat('#544934'));for(let i=0;i<3;i++){const lime=cyl(.075,.075,.045,-1.5+i*.14,1.24,4.4,mat('#809950'));lime.rotation.x=Math.PI/2}
  // Pendant lamps, seating and tables.
  for(let x of [-6,-3,0,3,6]){cyl(.009,.009,1.55,x,5.85,.4,black);cyl(.07,.37,.3,x,4.95,.4,mat('#354536',.35,.5));cyl(.32,.32,.015,x,4.79,.4,new THREE.MeshStandardMaterial({color:'#ffd193',emissive:'#ffc26a',emissiveIntensity:3}));light(x,4.55,.4,35)}
  for(let x of [-7,-4,4,7]){cyl(.28,.28,.12,x,.9,-.6,mat('#574231'));cyl(.055,.055,.8,x,.45,-.6,black);cyl(.26,.26,.04,x,.07,-.6,black);box(.56,.46,.08,x,1.18,-.83,mat('#574231'))}
@@ -88,20 +79,20 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, canInteract
  const positions=[0,-2.5,2.5];
  const patience=[1,1,1];let focusedSlot=0;
  const patientGlow=new THREE.Color('#7bb989'),restlessGlow=new THREE.Color('#d9a64d'),angryGlow=new THREE.Color('#e46b55'),glowColor=new THREE.Color();
- let yaw=0,pitch=-.3,looking=false,dragGlass=false,lastX,lastY,moved=false,targetX=0,flight=null,focus=null;
+ let yaw=0,pitch=-.3,looking=false,dragGlass=false,lastX,lastY,moved=false,targetX=0,flight=null,focus=null,stockDrag=null;
  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),keys=new Set();
- const home=()=>new THREE.Vector3(0,1.135,4.6);
+ const home=()=>new THREE.Vector3(0,1.15,4.6);
  function ray(e){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);raycaster.setFromCamera(pointer,camera)}
  function customerAt(e){ray(e);const hit=raycaster.intersectObjects(customers.filter(c=>c.visible),true)[0];return hit?hit.object.userData.slot:null}
  function startGlass(e){if(!canInteract?.()||!liquid.visible||flight)return false;dragGlass=true;moved=false;renderer.domElement.style.cursor='grabbing';e.preventDefault();return true}
- renderer.domElement.addEventListener('pointerdown',e=>{if(!canInteract?.())return;ray(e);if(raycaster.intersectObject(drinkGlass,true).length&&startGlass(e))return;looking=true;focus=null;moved=false;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
+ renderer.domElement.addEventListener('pointerdown',e=>{if(!canInteract?.())return;ray(e);const stockHit=raycaster.intersectObjects(glassRack,true)[0];if(stockHit){if(!canReplaceGlass?.())return;stockDrag=stockHit.object.parent;moved=false;renderer.domElement.style.cursor='grabbing';renderer.domElement.setPointerCapture(e.pointerId);e.preventDefault();return}if(drinkGlass.visible&&raycaster.intersectObject(drinkGlass,true).length&&startGlass(e))return;looking=true;focus=null;moved=false;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
  document.querySelector('#glass-toggle').addEventListener('pointerdown',e=>{lastX=e.clientX;lastY=e.clientY;startGlass(e)});
- document.addEventListener('pointermove',e=>{if(dragGlass){moved=true;ray(e);drinkGlass.position.copy(raycaster.ray.at(3.5,new THREE.Vector3()));const slot=customerAt(e);renderer.domElement.style.cursor=slot===null?'grabbing':'copy';return}if(!looking)return;let dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;yaw=THREE.MathUtils.clamp(yaw-dx*.003,-1.1,1.1);pitch=THREE.MathUtils.clamp(pitch-dy*.002,-.7,.35);lastX=e.clientX;lastY=e.clientY});
- document.addEventListener('pointerup',e=>{if(dragGlass){dragGlass=false;renderer.domElement.style.cursor='';const slot=moved?customerAt(e):null;const accepted=slot!==null&&onServe?.(slot);flight={start:drinkGlass.position.clone(),end:accepted?new THREE.Vector3(positions[slot],1.29,-.05):home(),elapsed:0,accepted};if(!moved)drinkGlass.position.copy(home());return}if(!looking)return;looking=false;if(moved)return;const slot=customerAt(e);if(slot!==null){onSelect?.(slot);return}ray(e);const hit=raycaster.intersectObjects(clickables)[0];if(hit)onBottle(hit.object.userData.ingredient)});
- document.addEventListener('pointercancel',()=>{looking=false;dragGlass=false;drinkGlass.position.copy(home());renderer.domElement.style.cursor=''});
+ document.addEventListener('pointermove',e=>{if(stockDrag){moved=true;ray(e);const point=raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-1.15),new THREE.Vector3());if(point)stockDrag.position.copy(point);renderer.domElement.style.cursor=raycaster.intersectObjects([mixingMat,coaster]).length?'copy':'grabbing';return}if(dragGlass){moved=true;ray(e);drinkGlass.position.copy(raycaster.ray.at(3.5,new THREE.Vector3()));const slot=customerAt(e);renderer.domElement.style.cursor=slot===null?'grabbing':'copy';return}if(!looking){if(canInteract?.()){ray(e);renderer.domElement.style.cursor=raycaster.intersectObjects(glassRack,true).length||(drinkGlass.visible&&raycaster.intersectObject(drinkGlass,true).length)?'grab':''}return}let dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(dx)+Math.abs(dy)>2)moved=true;yaw=THREE.MathUtils.clamp(yaw-dx*.003,-1.1,1.1);pitch=THREE.MathUtils.clamp(pitch-dy*.002,-.7,.35);lastX=e.clientX;lastY=e.clientY});
+ document.addEventListener('pointerup',e=>{if(stockDrag){ray(e);const stock=stockDrag;stockDrag=null;stock.position.copy(stock.userData.home);renderer.domElement.style.cursor='';if(moved&&canInteract?.()&&raycaster.intersectObjects([mixingMat,coaster]).length)onGlassPlaced?.(stock.userData.glassType);return}if(dragGlass){dragGlass=false;renderer.domElement.style.cursor='';const slot=moved?customerAt(e):null;const accepted=slot!==null&&onServe?.(slot);flight={start:drinkGlass.position.clone(),end:accepted?new THREE.Vector3(positions[slot],1.29,-.05):home(),elapsed:0,accepted};if(!moved)drinkGlass.position.copy(home());return}if(!looking)return;looking=false;if(moved)return;const slot=customerAt(e);if(slot!==null){onSelect?.(slot);return}ray(e);const hit=raycaster.intersectObjects(clickables)[0];if(hit)onBottle(hit.object.userData.ingredient)});
+ document.addEventListener('pointercancel',()=>{if(stockDrag){stockDrag.position.copy(stockDrag.userData.home);stockDrag=null}looking=false;dragGlass=false;drinkGlass.position.copy(home());renderer.domElement.style.cursor=''});
  addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();keys.add(e.key)}});addEventListener('keyup',e=>keys.delete(e.key));addEventListener('blur',()=>keys.clear());
  let tint=0;const clock=new THREE.Clock();function animate(){if(!graphicsWorking())return;requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.25),t=clock.elapsedTime;
- if(canInteract?.()&&!dragGlass&&!flight){targetX=THREE.MathUtils.clamp(targetX+((keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0))*dt*3.2,-5.5,5.5)}camera.position.x=THREE.MathUtils.lerp(camera.position.x,targetX,1-Math.exp(-dt*10));if(focus){const dx=focus.x-camera.position.x,dz=camera.position.z-focus.z,blend=1-Math.exp(-dt*7);yaw=THREE.MathUtils.lerp(yaw,-Math.atan2(dx,dz),blend);pitch=THREE.MathUtils.lerp(pitch,Math.min(-.3,-Math.atan2(camera.position.y-focus.y,Math.hypot(dx,dz))-.1),blend)}camera.rotation.set(pitch,yaw,0,'YXZ');
+ if(canInteract?.()&&!dragGlass&&!stockDrag&&!flight){targetX=THREE.MathUtils.clamp(targetX+((keys.has('ArrowRight')?1:0)-(keys.has('ArrowLeft')?1:0))*dt*3.2,-5.5,5.5)}camera.position.x=THREE.MathUtils.lerp(camera.position.x,targetX,1-Math.exp(-dt*10));if(focus){const dx=focus.x-camera.position.x,dz=camera.position.z-focus.z,blend=1-Math.exp(-dt*7);yaw=THREE.MathUtils.lerp(yaw,-Math.atan2(dx,dz),blend);pitch=THREE.MathUtils.lerp(pitch,Math.min(-.3,-Math.atan2(camera.position.y-focus.y,Math.hypot(dx,dz))-.1),blend)}camera.rotation.set(pitch,yaw,0,'YXZ');
  customers.forEach((c,slot)=>{if(!c.visible)return;if(canInteract?.()){c.position.z=THREE.MathUtils.lerp(c.position.z,-.55,1-Math.exp(-dt*2));c.position.y=Math.sin(t*1.5+slot)*.009}c.rotation.y=Math.sin(t*.4+slot)*.04;
  const p=patience[slot];glowColor.copy(p>.5?restlessGlow:angryGlow).lerp(p>.5?patientGlow:restlessGlow,p>.5?(p-.5)*2:p*2);
  const strength=slot===focusedSlot ? .16+(1-p)*.16+(p<.25?Math.sin(t*3)*.035:0) : 0;
@@ -109,6 +100,7 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, canInteract
  });
  if(flight&&canInteract?.()){flight.elapsed+=dt;const p=Math.min(flight.elapsed/.75,1),ease=p*p*(3-2*p);drinkGlass.position.lerpVectors(flight.start,flight.end,ease);drinkGlass.position.y+=Math.sin(p*Math.PI)*.12;if(p===1){const accepted=flight.accepted;flight=null;if(accepted)onDelivered?.();drinkGlass.position.copy(home())}}
  else if(!dragGlass&&!flight)drinkGlass.position.copy(home());
+ mixingMat.material.emissive.set(stockDrag?'#526c3b':'#000000');mixingMat.material.emissiveIntensity=.25;
  try{renderer.render(scene,camera)}catch(error){console.error('3D rendering failed:',error);reportGraphicsFailure('The browser failed while drawing the 3D scene.',error.stack || error.message)}}animate();
  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
  return {setGlass,pour(count){pours=count;updateLiquid()},arrive(slot,name,drink){const c=customers[slot];updateCustomerLabel(slot,name,drink);c.visible=true;c.position.set(positions[slot],0,-3.8)},depart(slot){customers[slot].visible=false},select(slot){focus=new THREE.Vector3(positions[slot],1.85,-.55)},setPatience(slot,value){patience[slot]=THREE.MathUtils.clamp(value,0,1)},highlight(slot){focusedSlot=slot},mix(){tint++;liquid.material.color.set(tint%2?'#d4973a':'#ba7a25')},isDragging(){return moved&&dragGlass},projectGlass(){const p=drinkGlass.position.clone();p.y+=glassType==='Coupe'?.43:.15;p.project(camera);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2}}};
