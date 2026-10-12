@@ -1,18 +1,22 @@
 import './style.css';
 import './readability.css';
+import './catalog.css';
 import {sound} from './audio';
+import {ingredients,recipes,measurement,matchesRecipe,drinkColor} from './drinks';
 import {createIcons,VolumeX,Volume2,CircleHelp,Pause,Wine,Coins,ReceiptText,Clock3,RefreshCw,Snowflake,Lightbulb,RotateCcw,GlassWater,ChevronsUpDown,ArrowUpRight,Mouse,BookOpen,X,ArrowRight} from 'lucide';
 import {createBar} from './scene';
 import {checkWebGL,reportGraphicsFailure,graphicsWorking} from './graphics';
 const icons={VolumeX,Volume2,CircleHelp,Pause,Wine,Coins,ReceiptText,Clock3,RefreshCw,Snowflake,Lightbulb,RotateCcw,GlassWater,ChevronsUpDown,ArrowUpRight,Mouse,BookOpen,X,ArrowRight};
 const $=s=>document.querySelector(s);
-const ingredients=[{name:'Bourbon',detail:'Rich & oaky',color:'#775022',unit:'2 oz'},{name:'Gin',detail:'Bright & botanical',color:'#83917b',unit:'2 oz'},{name:'Vermouth',detail:'Sweet & aromatic',color:'#3b5d42',unit:'1 oz'},{name:'Bitters',detail:'A little complexity',color:'#894021',unit:'2 dashes'},{name:'Simple syrup',detail:'The sweet spot',color:'#a58d4b',unit:'¼ oz'},{name:'Campari',detail:'Bold & bittersweet',color:'#8a3330',unit:'1 oz'}];
-const recipes=[{name:'Old Fashioned',sub:'A classic. For a reason.',items:[0,3,4],method:'Stir',glass:'Rocks',customer:'JAMES',quote:'“An Old Fashioned, please.<br>It’s been that kind of day.”'},{name:'Negroni',sub:'Bitter. Sweet. Beautiful.',items:[1,2,5],method:'Stir',glass:'Rocks',customer:'SOFIA',quote:'“A Negroni for me.<br>Something with a little bite.”'},{name:'Manhattan',sub:'A little New York, after dark.',items:[0,2,3],method:'Stir',glass:'Coupe',customer:'MILES',quote:'“One Manhattan, please.<br>Make it a good one.”'},{name:'Gin Old Fashioned',sub:'A fresh take on an old friend.',items:[1,3,4],method:'Stir',glass:'Rocks',customer:'OLIVIA',quote:'“Try a Gin Old Fashioned?<br>I’m feeling adventurous.”'},{name:'Shaken Martini',sub:'Ice cold. Unapologetically smooth.',items:[1,2],method:'Shake',glass:'Coupe',customer:'ALEX',quote:'“A gin Martini, please.<br>Shaken, not stirred.”'}];
 let served=0,tips=0,contents=[],mixed=false,glass=null,method='Stir',paused=false,busy=false,delivering=false,selected=0,sequence=0,arrivalTicks=0;
 const customers=[null,null,null];
 let toastTimeout;
 function toast(message){$('#toast').textContent=message;$('#toast').style.opacity=1;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('#toast').style.opacity=0,3200)}
-$('#ingredients').innerHTML=ingredients.map((i,n)=>`<button class="ingredient" data-index="${n}" title="Add ${i.unit} ${i.name}"><kbd>${n+1}</kbd><span class="ingredient-count"></span><div class="bottle-icon" style="--bottle:${i.color}" data-label="${i.name.split(' ')[0].toUpperCase()}"></div><b>${i.name}</b><small>${i.detail}</small></button>`).join('');
+$('#ingredients').innerHTML=ingredients.map((i,n)=>`<button class="ingredient" data-index="${n}" title="Add ${i.unit} ${i.name}"><kbd>${n<9?n+1:n===9?'0':''}</kbd><span class="ingredient-count"></span><div class="bottle-icon" style="--bottle:${i.color}" data-label="${i.name.split(' ')[0].toUpperCase()}"></div><b>${i.name}</b><small>${i.detail}</small></button>`).join('');
+const filters=document.createElement('div');filters.id='ingredient-filters';filters.setAttribute('aria-label','Ingredient categories');
+filters.innerHTML=['All','Spirits','Modifiers','Mixers'].map(category=>`<button data-category="${category}" aria-pressed="${category==='All'}">${category}</button>`).join('');
+$('.ingredient-area .eyebrow').append(filters);
+filters.onclick=e=>{const button=e.target.closest('button');if(!button)return;document.querySelectorAll('#ingredient-filters button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));document.querySelectorAll('.ingredient').forEach((el,i)=>{el.hidden=button.dataset.category!=='All'&&ingredients[i].category!==button.dataset.category});$('#ingredients').scrollLeft=0};
 const queue=document.createElement('div');queue.id='customer-queue';queue.setAttribute('aria-label','Customers at the bar');$('.order-card').prepend(queue);
 let bar={setGlass(){},pour(){},arrive(){},depart(){},select(){},setPatience(){},highlight(){},startMix(){},mix(){}};
 window.addEventListener('graphics-status',()=>{paused=true;sound.setPaused(true)});
@@ -22,13 +26,13 @@ function canReplaceGlass(){if(paused||busy||delivering)return false;if(contents.
 function placeGlass(type){if(!canReplaceGlass())return;glass=type;mixed=false;sound.play('glass');update();toast(`${type} glass ready. Add your ingredients.`)}
 function current(){return customers[selected]?.recipe||recipes[0]}
 function update(){
- document.querySelectorAll('.ingredient').forEach((el,i)=>{const n=contents.filter(x=>x===i).length;el.classList.toggle('active',n>0);el.querySelector('.ingredient-count').textContent=n?`+${n}`:''});
+ document.querySelectorAll('.ingredient').forEach((el,i)=>{const n=contents.filter(x=>x.id===i).length;el.title=`Add ${measurement(current(),i)} ${ingredients[i].name}`;el.classList.toggle('active',n>0);el.querySelector('.ingredient-count').textContent=n?`+${n}`:''});
  $('#pour-count').textContent=`${contents.length} pour${contents.length===1?'':'s'}`;
- $('#mix-contents').textContent=contents.length?contents.map(i=>ingredients[i].name).join(' + ')+(mixed?' · Mixed ✓':''):glass?'A blank canvas. Add your ingredients.':'Drag a glass from the counter onto the mat.';
+ $('#mix-contents').textContent=contents.length?contents.map(p=>`${p.amount} ${ingredients[p.id].name}`).join(' + ')+(mixed?' · Mixed ✓':''):glass?'A blank canvas. Add your ingredients.':'Drag a glass from the counter onto the mat.';
  $('#glass-name').textContent=glass?glass+' glass':'Pick a glass from the counter';$('#mix span').textContent=busy?'Mixing…':mixed?'Mixed ✓':method;$('#mix').disabled=busy||delivering;
  $('#serve').disabled=!contents.length||busy||delivering;
- current().items.forEach(i=>$(`#recipe li[data-id="${i}"]`)?.classList.toggle('done',contents.includes(i)));
- bar.setGlass(glass);bar.pour(contents.length);
+ current().items.forEach(i=>$(`#recipe li[data-id="${i}"]`)?.classList.toggle('done',contents.some(p=>p.id===i&&p.amount===measurement(current(),i))));
+ bar.setGlass(glass);bar.pour(contents.length,drinkColor(contents.map(p=>p.id)));
 }
 function renderQueue(){customers.forEach((c,slot)=>{if(c)bar.setPatience(slot,c.time/105)});bar.highlight(customers[selected]&&!customers[selected].leaving?selected:-1);queue.innerHTML=customers.map((c,slot)=>c?`<button data-slot="${slot}" class="${slot===selected?'selected':''}" ${c.leaving?'disabled':''}><b>${c.recipe.customer}</b><span>${c.leaving?'THANK YOU':Math.ceil(c.time)+'s'}</span></button>`:`<span class="empty-seat">${['CENTER','LEFT','RIGHT'][slot]} · OPEN</span>`).join('')}
 function showOrder(){
@@ -36,14 +40,14 @@ function showOrder(){
  if(!c){$('#drink-title').textContent='Waiting for company';$('#recipe').innerHTML='';$('#customer-bubble').style.opacity=0;return}
  $('#drink-title').textContent=r.name;$('#drink-subtitle').textContent=r.sub;$('#customer-name').textContent=r.customer;$('#customer-dialogue').innerHTML=c.leaving?'“That’s perfect. Keep the change!”':r.quote;
  $('#order-number').textContent=String(c.number).padStart(3,'0');
- $('#recipe').innerHTML=r.items.map(i=>`<li data-id="${i}"><span class="check">✓</span><span>${ingredients[i].name}</span><span>${r.name==='Negroni'?'1 oz':ingredients[i].unit}</span></li>`).join('');
+ $('#recipe').innerHTML=r.items.map(i=>`<li data-id="${i}"><span class="check">✓</span><span>${ingredients[i].name}</span><span>${measurement(r,i)}</span></li>`).join('');
  $('#method-title').textContent=`${r.method} with ice`;$('#method-note').textContent=`Serve in a ${r.glass.toLowerCase()} glass`;
  $('#customer-bubble').style.opacity=1;updateTimer();update();
 }
 function selectCustomer(slot){if(paused||busy||delivering||!customers[slot]||customers[slot].leaving)return;selected=slot;bar.select(slot);showOrder()}
 queue.onclick=e=>{const button=e.target.closest('button');if(button)selectCustomer(Number(button.dataset.slot))};
-function arrive(slot){const number=sequence++;customers[slot]={recipe:recipes[number%recipes.length],number:number+1,time:105,leaving:false};bar.arrive(slot,customers[slot].recipe.customer,customers[slot].recipe.name);sound.play('arrival');if(!customers[selected]||customers[selected].leaving)selected=slot;showOrder()}
-function addIngredient(index){if(paused||busy||delivering)return;if(!glass){toast('First, drag a glass from the counter onto the mixing mat.');return}if(contents.length>=6){toast('Your glass is full. Reset to start again.');return}contents.push(index);mixed=false;sound.play('pour');update()}
+function arrive(slot){const number=sequence++;const available=recipes.slice(3).filter(r=>!customers.some(c=>c?.recipe===r));const recipe=number<3?recipes[number]:available[Math.floor(Math.random()*available.length)];customers[slot]={recipe,number:number+1,time:105,leaving:false};bar.arrive(slot,customers[slot].recipe.customer,customers[slot].recipe.name);sound.play('arrival');if(!customers[selected]||customers[selected].leaving)selected=slot;showOrder()}
+function addIngredient(index){if(paused||busy||delivering)return;if(!glass){toast('First, drag a glass from the counter onto the mixing mat.');return}if(contents.length>=6){toast('Your glass is full. Reset to start again.');return}contents.push({id:index,amount:measurement(current(),index)});mixed=false;sound.play('pour');update()}
 function reset(){if(paused||busy||delivering)return;contents=[];glass=null;mixed=false;sound.play('reset');update()}
 function doMix(){if(paused||busy||delivering)return;if(!contents.length){toast('Start with a pour. Your glass is empty.');return}busy=true;mixed=false;bar.startMix(method);sound.play('mix',method);update();setTimeout(()=>{busy=false;mixed=true;bar.mix();update();toast('Ready. Drag the glass from your bar onto a customer.');},1600)}
 function removeCustomer(slot){sound.play('departure');customers[slot]=null;bar.depart(slot);if(selected===slot){selected=customers.findIndex(c=>c&&!c.leaving);if(selected<0)selected=0}showOrder()}
@@ -51,7 +55,7 @@ function serve(slot){
  if(paused||busy||delivering)return false;
  const c=customers[slot];if(!c||c.leaving)return false;const r=c.recipe;
  if(!contents.length){toast('An empty glass? Let’s add something first.');return false}
- if(contents.length!==r.items.length||!r.items.every(i=>contents.filter(x=>x===i).length===1)){toast(`Not ${r.customer}’s order. They want a ${r.name}.`);c.time=Math.max(1,c.time-7);return false}
+ if(!matchesRecipe(contents,r)){toast(`Not ${r.customer}’s order. They want a ${r.name}.`);c.time=Math.max(1,c.time-7);return false}
  if(!mixed){toast('Give your drink a mix before serving.');return false}
  if(method!==r.method){toast(`This one needs a ${r.method.toLowerCase()}, not a ${method.toLowerCase()}.`);return false}
  if(glass!==r.glass){toast(`Almost! This drink belongs in a ${r.glass.toLowerCase()} glass.`);return false}
@@ -80,10 +84,10 @@ $('#serve span').textContent='Drag glass to serve';
 $('#glass-toggle').onclick=()=>{if(paused)return;toast(glass?'Drag your prepared glass onto a customer to serve.':'Drag a rocks glass or coupe from the counter onto the mixing mat.')};
 function toggleMethod(){if(busy||paused||delivering)return;method=method==='Stir'?'Shake':'Stir';mixed=false;sound.play('tool');update();toast(`${method==='Shake'?'Shaker':'Bar spoon'} selected. Press Space to mix.`)}
 $('#tool-toggle').onclick=toggleMethod;$('#mix').oncontextmenu=e=>{e.preventDefault();toggleMethod()};
-function showModal(kind){paused=true;sound.setPaused(true);$('#modal').classList.remove('hidden');$('.modal h2').textContent=kind==='book'?'The house recipes.':kind==='pause'?'Take a little breather.':'A night behind the bar.';$('#modal-content').innerHTML=kind==='book'?recipes.map(r=>`<div class="book-recipe"><b>${r.name}</b><p>${r.items.map(i=>ingredients[i].name).join(' + ')}<br>${r.method} with ice · ${r.glass} glass</p></div>`).join(''):kind==='pause'?'<p>Your shift is paused. Your customers can wait a moment.</p>':'<p>Use <b>← / →</b> to move behind the bar. Click a customer or their name in the order panel to view their recipe. Up to three people can wait at once, each with their own patience timer.</p><p>First, drag a rocks glass or coupe from the glassware on the right of the prep counter onto the center mixing mat. Then click bottles or use <b>1–6</b> to pour. Reset clears the mat so you can choose another glass. <b>M</b> changes the mixing tool; <b>Space</b> mixes.</p><p><b>Drag the prepared 3D glass on the counter onto a customer and release to serve.</b> You can also drag the glass icon from your workstation. Wrong drinks return to you. Drag elsewhere in the room to look around.</p>';$('#resume').firstChild.textContent='Back behind the bar ';createIcons({icons})}
+function showModal(kind){paused=true;sound.setPaused(true);$('#modal').classList.remove('hidden');$('.modal').classList.toggle('recipe-book',kind==='book');$('.modal h2').textContent=kind==='book'?`The house recipes. (${recipes.length})`:kind==='pause'?'Take a little breather.':'A night behind the bar.';$('#modal-content').innerHTML=kind==='book'?recipes.map(r=>`<div class="book-recipe"><b>${r.name}</b><p>${r.items.map(i=>`${measurement(r,i)} ${ingredients[i].name}`).join(' + ')}<br>${r.method} with ice · ${r.glass} glass</p></div>`).join(''):kind==='pause'?'<p>Your shift is paused. Your customers can wait a moment.</p>':'<p>Use <b>← / →</b> to move behind the bar. Click a customer or their name in the order panel to view their recipe. Up to three people can wait at once, each with their own patience timer.</p><p>First, drag a rocks glass or coupe from the glassware on the right of the prep counter onto the center mixing mat. Then click bottles or use <b>1–9 / 0</b> for the first ten ingredients. Use the Spirits, Modifiers, and Mixers filters to explore the rest. Each pour is measured for the selected customer’s recipe. Reset clears the mat so you can choose another glass. <b>M</b> changes the mixing tool; <b>Space</b> mixes.</p><p><b>Drag the prepared 3D glass on the counter onto a customer and release to serve.</b> You can also drag the glass icon from your workstation. Wrong drinks return to you. Drag elsewhere in the room to look around.</p>';$('#resume').firstChild.textContent='Back behind the bar ';createIcons({icons})}
 function closeModal(){paused=!graphicsWorking();sound.setPaused(paused);$('#modal').classList.add('hidden')}
 $('#help').onclick=()=>showModal('help');$('#pause').onclick=()=>showModal('pause');$('#recipe-toggle').onclick=()=>showModal('book');$('#close-modal').onclick=closeModal;$('#resume').onclick=closeModal;$('#modal').onclick=e=>{if(e.target===$('#modal'))closeModal()};
-addEventListener('keydown',e=>{if(e.repeat)return;if(e.key==='Escape'){paused?closeModal():showModal('pause');return}if(paused)return;if(/^[1-6]$/.test(e.key))addIngredient(Number(e.key)-1);if(e.code==='Space'){e.preventDefault();doMix()}if(e.key==='Enter')toast('Drag your glass onto a customer to serve.');if(e.key.toLowerCase()==='r')showModal('book');if(e.key.toLowerCase()==='m')toggleMethod();if(e.key.toLowerCase()==='c')reset()});
+addEventListener('keydown',e=>{if(e.repeat)return;if(e.key==='Escape'){paused?closeModal():showModal('pause');return}if(paused)return;if(/^[0-9]$/.test(e.key))addIngredient(e.key==='0'?9:Number(e.key)-1);if(e.code==='Space'){e.preventDefault();doMix()}if(e.key==='Enter')toast('Drag your glass onto a customer to serve.');if(e.key.toLowerCase()==='r')showModal('book');if(e.key.toLowerCase()==='m')toggleMethod();if(e.key.toLowerCase()==='c')reset()});
 function updateSoundButton(){const button=$('#sound');button.innerHTML=`<i data-lucide="${sound.enabled?'volume-2':'volume-x'}"></i>`;button.title=sound.enabled?'Mute all sounds':'Enable sounds';button.setAttribute('aria-label',button.title);button.setAttribute('aria-pressed',String(sound.enabled));createIcons({icons})}
 $('#sound').onclick=()=>{const enabled=sound.toggle();updateSoundButton();toast(enabled?'Bar sounds on.':'All bar sounds muted.')};
 updateSoundButton();
