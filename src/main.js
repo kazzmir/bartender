@@ -1,6 +1,7 @@
 import './style.css';
 import './readability.css';
 import './catalog.css';
+import './tutorial.css';
 import {sound} from './audio';
 import {ingredients,recipes,measurement,matchesRecipe,drinkColor} from './drinks';
 import {createIcons,VolumeX,Volume2,CircleHelp,Pause,Wine,Coins,ReceiptText,Clock3,RefreshCw,Snowflake,Lightbulb,RotateCcw,GlassWater,ChevronsUpDown,ArrowUpRight,Mouse,BookOpen,X,ArrowRight} from 'lucide';
@@ -26,7 +27,13 @@ function canReplaceGlass(){if(paused||busy||delivering)return false;if(contents.
 function placeGlass(type){if(!canReplaceGlass())return;glass=type;mixed=false;sound.play('glass');update();toast(`${type} glass ready. Add your ingredients.`)}
 function current(){return customers[selected]?.recipe||recipes[0]}
 function update(){
- document.querySelectorAll('.ingredient').forEach((el,i)=>{const n=contents.filter(x=>x.id===i).length;el.title=`Add ${measurement(current(),i)} ${ingredients[i].name}`;el.classList.toggle('active',n>0);el.querySelector('.ingredient-count').textContent=n?`+${n}`:''});
+ const recipe=current(),tutorial=served===0&&!paused,ready=matchesRecipe(contents,recipe);
+ document.querySelectorAll('.ingredient').forEach((el,i)=>{const n=contents.filter(x=>x.id===i).length;el.title=`Add ${measurement(recipe,i)} ${ingredients[i].name}`;el.classList.toggle('active',n>0);const needed=tutorial&&recipe.items.includes(i)&&!contents.some(p=>p.id===i&&p.amount===measurement(recipe,i));el.classList.toggle('tutorial-needed',needed);el.querySelector('.ingredient-count').textContent=n?`+${n}`:''});
+ $('#mix').classList.toggle('tutorial-needed',tutorial&&ready&&!mixed&&!busy&&method===recipe.method);
+ $('#tool-toggle').classList.toggle('tutorial-needed',tutorial&&ready&&!mixed&&!busy&&method!==recipe.method);
+ const intro=$('.station-top small');
+ intro.textContent=!tutorial?'Pick. Pour. Perfect.':!glass?'Start with the highlighted cup.':!ready?'Add the highlighted ingredients.':mixed?'Drag your drink onto the customer.':method!==recipe.method?`Switch to ${recipe.method.toLowerCase()}, then mix.`:busy?'Mixing your first drink…':`${recipe.method} your drink — click the highlighted button.`;
+ intro.classList.toggle('tutorial-instruction',tutorial);
  $('#pour-count').textContent=`${contents.length} pour${contents.length===1?'':'s'}`;
  $('#mix-contents').textContent=contents.length?contents.map(p=>`${p.amount} ${ingredients[p.id].name}`).join(' + ')+(mixed?' · Mixed ✓':''):glass?'A blank canvas. Add your ingredients.':'Drag a glass from the counter onto the mat.';
  $('#glass-name').textContent=glass?glass+' glass':'Pick a glass from the counter';$('#mix span').textContent=busy?'Mixing…':mixed?'Mixed ✓':method;$('#mix').disabled=busy||delivering;
@@ -61,7 +68,7 @@ function serve(slot){
  if(glass!==r.glass){toast(`Almost! This drink belongs in a ${r.glass.toLowerCase()} glass.`);return false}
  const tip=2+Math.round(c.time/105*400)/100;served++;tips+=tip;sound.play('serve');c.leaving=true;c.leaveIn=Infinity;delivering=true;
  $('#served').textContent=served;$('#tips').textContent='$'+tips.toFixed(2);$('#goal-count').textContent=Math.min(served,8);$('#goal-bar').style.width=Math.min(served/8*100,100)+'%';
- toast(served===8?'Shift goal complete! Eight happy customers.':`${r.customer}: “Perfect!” +$${tip.toFixed(2)} tip`);renderQueue();
+ toast(served===8?'Shift goal complete! Eight happy customers.':`${r.customer}: “Perfect!” +$${tip.toFixed(2)} tip`);renderQueue();update();
  return true;
 }
 function finishDelivery(){
@@ -84,8 +91,8 @@ $('#serve span').textContent='Drag glass to serve';
 $('#glass-toggle').onclick=()=>{if(paused)return;toast(glass?'Drag your prepared glass onto a customer to serve.':'Drag a rocks glass or coupe from the counter onto the mixing mat.')};
 function toggleMethod(){if(busy||paused||delivering)return;method=method==='Stir'?'Shake':'Stir';mixed=false;sound.play('tool');update();toast(`${method==='Shake'?'Shaker':'Bar spoon'} selected. Press Space to mix.`)}
 $('#tool-toggle').onclick=toggleMethod;$('#mix').oncontextmenu=e=>{e.preventDefault();toggleMethod()};
-function showModal(kind){paused=true;sound.setPaused(true);$('#modal').classList.remove('hidden');$('.modal').classList.toggle('recipe-book',kind==='book');$('.modal h2').textContent=kind==='book'?`The house recipes. (${recipes.length})`:kind==='pause'?'Take a little breather.':'A night behind the bar.';$('#modal-content').innerHTML=kind==='book'?recipes.map(r=>`<div class="book-recipe"><b>${r.name}</b><p>${r.items.map(i=>`${measurement(r,i)} ${ingredients[i].name}`).join(' + ')}<br>${r.method} with ice · ${r.glass} glass</p></div>`).join(''):kind==='pause'?'<p>Your shift is paused. Your customers can wait a moment.</p>':'<p>Use <b>← / →</b> to move behind the bar. Click a customer or their name in the order panel to view their recipe. Up to three people can wait at once, each with their own patience timer.</p><p>First, drag a rocks glass or coupe from the glassware on the right of the prep counter onto the center mixing mat. Then click bottles or use <b>1–9 / 0</b> for the first ten ingredients. Use the Spirits, Modifiers, and Mixers filters to explore the rest. Each pour is measured for the selected customer’s recipe. Reset clears the mat so you can choose another glass. <b>M</b> changes the mixing tool; <b>Space</b> mixes.</p><p><b>Drag the prepared 3D glass on the counter onto a customer and release to serve.</b> You can also drag the glass icon from your workstation. Wrong drinks return to you. Drag elsewhere in the room to look around.</p>';$('#resume').firstChild.textContent='Back behind the bar ';createIcons({icons})}
-function closeModal(){paused=!graphicsWorking();sound.setPaused(paused);$('#modal').classList.add('hidden')}
+function showModal(kind){paused=true;sound.setPaused(true);$('#modal').classList.remove('hidden');$('.modal').classList.toggle('recipe-book',kind==='book');$('.modal h2').textContent=kind==='book'?`The house recipes. (${recipes.length})`:kind==='pause'?'Take a little breather.':'A night behind the bar.';$('#modal-content').innerHTML=kind==='book'?recipes.map(r=>`<div class="book-recipe"><b>${r.name}</b><p>${r.items.map(i=>`${measurement(r,i)} ${ingredients[i].name}`).join(' + ')}<br>${r.method} with ice · ${r.glass} glass</p></div>`).join(''):kind==='pause'?'<p>Your shift is paused. Your customers can wait a moment.</p>':'<p>Use <b>← / →</b> to move behind the bar. Click a customer or their name in the order panel to view their recipe. Up to three people can wait at once, each with their own patience timer.</p><p>First, drag a rocks glass or coupe from the glassware on the right of the prep counter onto the center mixing mat. Then click bottles or use <b>1–9 / 0</b> for the first ten ingredients. Use the Spirits, Modifiers, and Mixers filters to explore the rest. Each pour is measured for the selected customer’s recipe. Reset clears the mat so you can choose another glass. <b>M</b> changes the mixing tool; <b>Space</b> mixes.</p><p><b>Drag the prepared 3D glass on the counter onto a customer and release to serve.</b> You can also drag the glass icon from your workstation. Wrong drinks return to you. Drag elsewhere in the room to look around.</p>';$('#resume').firstChild.textContent='Back behind the bar ';update();createIcons({icons})}
+function closeModal(){paused=!graphicsWorking();sound.setPaused(paused);$('#modal').classList.add('hidden');update()}
 $('#help').onclick=()=>showModal('help');$('#pause').onclick=()=>showModal('pause');$('#recipe-toggle').onclick=()=>showModal('book');$('#close-modal').onclick=closeModal;$('#resume').onclick=closeModal;$('#modal').onclick=e=>{if(e.target===$('#modal'))closeModal()};
 addEventListener('keydown',e=>{if(e.repeat)return;if(e.key==='Escape'){paused?closeModal():showModal('pause');return}if(paused)return;if(/^[0-9]$/.test(e.key))addIngredient(e.key==='0'?9:Number(e.key)-1);if(e.code==='Space'){e.preventDefault();doMix()}if(e.key==='Enter')toast('Drag your glass onto a customer to serve.');if(e.key.toLowerCase()==='r')showModal('book');if(e.key.toLowerCase()==='m')toggleMethod();if(e.key.toLowerCase()==='c')reset()});
 function updateSoundButton(){const button=$('#sound');button.innerHTML=`<i data-lucide="${sound.enabled?'volume-2':'volume-x'}"></i>`;button.title=sound.enabled?'Mute all sounds':'Enable sounds';button.setAttribute('aria-label',button.title);button.setAttribute('aria-pressed',String(sound.enabled));createIcons({icons})}

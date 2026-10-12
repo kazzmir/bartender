@@ -47,8 +47,21 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await pickGlass(940, 548);
   await expect(page.locator('#glass-name')).toHaveText('Rocks glass');
   await expect(page.locator('#customer-queue button')).toHaveCount(3, { timeout: 22000 });
-  for (const key of ['1', '4', '5', 'Space']) await page.keyboard.press(key);
+  await expect(page.locator('.ingredient.tutorial-needed')).toHaveCount(3);
+  await page.keyboard.press('1');
+  await expect(page.locator('.ingredient.tutorial-needed')).toHaveCount(2);
+  await page.keyboard.press('4');
+  await expect(page.locator('.ingredient.tutorial-needed')).toHaveCount(1);
+  await page.keyboard.press('5');
+  await expect(page.locator('.ingredient.tutorial-needed')).toHaveCount(0);
+  await expect(page.locator('#mix')).toHaveClass(/tutorial-needed/);
+  await page.keyboard.press('m');
+  await expect(page.locator('#tool-toggle')).toHaveClass(/tutorial-needed/);
+  await expect(page.locator('#mix')).not.toHaveClass(/tutorial-needed/);
+  await page.keyboard.press('m');
+  await page.keyboard.press('Space');
   await expect(page.locator('#mix span')).toHaveText('Mixed ✓');
+  await expect(page.locator('#mix')).not.toHaveClass(/tutorial-needed/);
   const dragTo = async (x, y) => {
     const glass = await page.locator('#glass-toggle').boundingBox();
     await page.mouse.move(glass.x + glass.width / 2, glass.y + glass.height / 2);
@@ -71,6 +84,7 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await expect(page.locator('#pour-count')).toHaveText('0 pours');
   await expect(page.locator('#glass-name')).toHaveText('Pick a glass from the counter');
   await expect(page.locator('#world canvas')).toHaveAttribute('data-glass-hint', '');
+  await expect(page.locator('.tutorial-needed')).toHaveCount(0);
   await page.keyboard.down('ArrowRight');
   await page.waitForTimeout(500);
   await page.keyboard.up('ArrowRight');
