@@ -15,7 +15,7 @@ $('#ingredients').innerHTML=ingredients.map((i,n)=>`<button class="ingredient" d
 const queue=document.createElement('div');queue.id='customer-queue';queue.setAttribute('aria-label','Customers at the bar');$('.order-card').prepend(queue);
 let bar={setGlass(){},pour(){},arrive(){},depart(){},select(){},setPatience(){},highlight(){},mix(){}};
 window.addEventListener('graphics-status',()=>{paused=true;sound.setPaused(true)});
-if(checkWebGL())try{bar=createBar(addIngredient,{onSelect:selectCustomer,onServe:serve,onDelivered:finishDelivery,onGlassPlaced:placeGlass,canReplaceGlass:canReplaceGlass,canInteract:()=>!paused});}catch(error){console.error(error);reportGraphicsFailure('WebGL is available, but the 3D scene could not start.',error.stack||error.message)}
+if(checkWebGL())try{bar=createBar(addIngredient,{onSelect:selectCustomer,onServe:serve,onDelivered:finishDelivery,onGlassPlaced:placeGlass,canReplaceGlass:canReplaceGlass,getGlassHint:()=>served===0&&!glass&&!paused?current().glass:null,canInteract:()=>!paused});}catch(error){console.error(error);reportGraphicsFailure('WebGL is available, but the 3D scene could not start.',error.stack||error.message)}
 if(!graphicsWorking())paused=true;
 function canReplaceGlass(){if(paused||busy||delivering)return false;if(contents.length){toast('Reset your drink before choosing a different glass.');return false}return true}
 function placeGlass(type){if(!canReplaceGlass())return;glass=type;mixed=false;sound.play('glass');update();toast(`${type} glass ready. Add your ingredients.`)}

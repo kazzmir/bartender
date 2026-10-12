@@ -6,6 +6,8 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await page.goto('/');
   await expect(page.locator('#world canvas')).toBeVisible();
   await expect(page.locator('#customer-queue button')).toHaveCount(2);
+  await expect(page.locator('#glass-hint')).toBeVisible();
+  await expect(page.locator('#glass-hint')).toHaveText('choose this cup');
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#sound').click();
   await expect(page.locator('#sound')).toHaveAttribute('aria-pressed', 'false');
@@ -25,8 +27,10 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await expect(page.locator('#glass-name')).toHaveText('Pick a glass from the counter');
   await pickGlass(900, 458);
   await expect(page.locator('#glass-name')).toHaveText('Coupe glass');
+  await expect(page.locator('#glass-hint')).toBeHidden();
   await page.keyboard.press('c');
   await expect(page.locator('#glass-name')).toHaveText('Pick a glass from the counter');
+  await expect(page.locator('#glass-hint')).toBeVisible();
   await pickGlass(940, 548);
   await expect(page.locator('#glass-name')).toHaveText('Rocks glass');
   await expect(page.locator('#customer-queue button')).toHaveCount(3, { timeout: 22000 });
@@ -53,6 +57,7 @@ test('multiple customers, targeted drag serving, and context loss', async ({ pag
   await expect(page.locator('#served')).toHaveText('1');
   await expect(page.locator('#pour-count')).toHaveText('0 pours');
   await expect(page.locator('#glass-name')).toHaveText('Pick a glass from the counter');
+  await expect(page.locator('#glass-hint')).toBeHidden();
   await page.keyboard.down('ArrowRight');
   await page.waitForTimeout(500);
   await page.keyboard.up('ArrowRight');

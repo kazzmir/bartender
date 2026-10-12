@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {watchRenderer, reportGraphicsFailure, graphicsWorking} from './graphics';
 
-export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlaced, canReplaceGlass, canInteract} = {}) {
+export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlaced, canReplaceGlass, getGlassHint, canInteract} = {}) {
  const scene = new THREE.Scene(); scene.background = new THREE.Color('#181b14'); scene.fog=new THREE.FogExp2('#171c15',.035);
  const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,70);camera.position.set(0,2.75,8.2);
  const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;document.querySelector('#world').append(renderer.domElement);watchRenderer(renderer);
@@ -47,6 +47,16 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlac
  function setGlass(type){if(type===glassType)return;glassType=type;drinkGlass.visible=!!type;if(type){buildGlass(drinkGlass,type,drinkMaterial);liquid.geometry.dispose();liquid.geometry=type==='Coupe'?new THREE.CylinderGeometry(.205,.13,.065,32):new THREE.CylinderGeometry(.16,.135,.05,24)}updateLiquid()}
  const glassRack=[];
  for(const type of ['Rocks','Coupe'])for(const x of [.95,1.45]){const stock=glass(x,1.135,type==='Rocks'?5.02:4.4,type);stock.userData.glassType=type;stock.userData.home=stock.position.clone();glassRack.push(stock)}
+ const glassHint=document.createElement('div');glassHint.id='glass-hint';glassHint.hidden=true;glassHint.setAttribute('role','status');
+ glassHint.innerHTML='<div class="glass-hint-content"><span>choose this cup</span><svg width="30" height="40" viewBox="0 0 30 40" aria-hidden="true"><path d="M15 3v29M5 23l10 10 10-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+ document.body.append(glassHint);
+ function updateGlassHint(){
+ const type=getGlassHint?.(),stock=glassRack.find(g=>g.userData.glassType===type);
+ if(!stock||stockDrag){glassHint.hidden=true;return}
+ const point=stock.position.clone();point.y+=type==='Coupe'?.54:.32;point.project(camera);
+ glassHint.hidden=point.z < -1||point.z>1||Math.abs(point.x)>1||Math.abs(point.y)>1;
+ if(!glassHint.hidden){glassHint.style.left=`${(point.x+1)*innerWidth/2}px`;glassHint.style.top=`${(1-point.y)*innerHeight/2-5}px`}
+ }
  box(.7,.08,.4,-1.35,1.16,4.4,mat('#544934'));for(let i=0;i<3;i++){const lime=cyl(.075,.075,.045,-1.5+i*.14,1.24,4.4,mat('#809950'));lime.rotation.x=Math.PI/2}
  // Pendant lamps, seating and tables.
  for(let x of [-6,-3,0,3,6]){cyl(.009,.009,1.55,x,5.85,.4,black);cyl(.07,.37,.3,x,4.95,.4,mat('#354536',.35,.5));cyl(.32,.32,.015,x,4.79,.4,new THREE.MeshStandardMaterial({color:'#ffd193',emissive:'#ffc26a',emissiveIntensity:3}));light(x,4.55,.4,35)}
@@ -101,6 +111,7 @@ export function createBar(onBottle, {onSelect, onServe, onDelivered, onGlassPlac
  if(flight&&canInteract?.()){flight.elapsed+=dt;const p=Math.min(flight.elapsed/.75,1),ease=p*p*(3-2*p);drinkGlass.position.lerpVectors(flight.start,flight.end,ease);drinkGlass.position.y+=Math.sin(p*Math.PI)*.12;if(p===1){const accepted=flight.accepted;flight=null;if(accepted)onDelivered?.();drinkGlass.position.copy(home())}}
  else if(!dragGlass&&!flight)drinkGlass.position.copy(home());
  mixingMat.material.emissive.set(stockDrag?'#526c3b':'#000000');mixingMat.material.emissiveIntensity=.25;
+ camera.updateMatrixWorld();updateGlassHint();
  try{renderer.render(scene,camera)}catch(error){console.error('3D rendering failed:',error);reportGraphicsFailure('The browser failed while drawing the 3D scene.',error.stack || error.message)}}animate();
  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
  return {setGlass,pour(count){pours=count;updateLiquid()},arrive(slot,name,drink){const c=customers[slot];updateCustomerLabel(slot,name,drink);c.visible=true;c.position.set(positions[slot],0,-3.8)},depart(slot){customers[slot].visible=false},select(slot){focus=new THREE.Vector3(positions[slot],1.85,-.55)},setPatience(slot,value){patience[slot]=THREE.MathUtils.clamp(value,0,1)},highlight(slot){focusedSlot=slot},mix(){tint++;liquid.material.color.set(tint%2?'#d4973a':'#ba7a25')},isDragging(){return moved&&dragGlass},projectGlass(){const p=drinkGlass.position.clone();p.y+=glassType==='Coupe'?.43:.15;p.project(camera);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2}}};
